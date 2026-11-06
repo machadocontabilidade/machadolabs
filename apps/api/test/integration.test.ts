@@ -31,16 +31,19 @@ else{
    const hash=await argon2.hash('StrongOwnerPassword-2026',{type:argon2.argon2id,memoryCost:19456,timeCost:2,parallelism:1})
    await adminDb.query("INSERT INTO users(name,email,password_hash,role) VALUES('Test Owner','owner@example.test',$1,'OWNER')",[hash])
    await assert.rejects(()=>adminDb.query("INSERT INTO tools(name,category,route,status) VALUES('Invalid','Test','/invalid','coming_soon')"))
-   const{createApp}=await import('../src/app.js');({pool}=await import('../src/db/pool.js'));const appIdentity=await pool.query('SELECT current_database() AS name');assert.equal(appIdentity.rows[0].name,'machado_labs_test','API requests must use machado_labs_test')
-   server=createApp().listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));base=`http://127.0.0.1:${server.address().port}/api`
+   const{createApp}=await import('../src/app.js');const{env,allowedWebOrigin}=await import('../src/config/env.js');({pool}=await import('../src/db/pool.js'));const appIdentity=await pool.query('SELECT current_database() AS name');assert.equal(appIdentity.rows[0].name,'machado_labs_test','API requests must use machado_labs_test')
+   const app=createApp();assert.equal(app.get('trust proxy'),false);server=app.listen(0,'127.0.0.1');await new Promise<void>(resolve=>server.once('listening',resolve));base=`http://127.0.0.1:${server.address().port}/api`
    type Jar={cookie:string;csrf:string}
-   async function call(path:string,jar:Jar,method='GET',body?:unknown,ip='127.0.0.1'){
-    const headers:Record<string,string>={cookie:jar.cookie,'x-forwarded-for':ip};if(method!=='GET'){headers.origin='http://localhost:5173';headers['x-csrf-token']=jar.csrf;headers['content-type']='application/json'}
+   async function call(path:string,jar:Jar,method='GET',body?:unknown,ip='127.0.0.1',origin='http://localhost:5173'){
+    const headers:Record<string,string>={cookie:jar.cookie,'x-forwarded-for':ip};if(method!=='GET'){headers.origin=origin;headers['x-csrf-token']=jar.csrf;headers['content-type']='application/json'}
     const response=await fetch(base+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});const cookies=response.headers.getSetCookie().map(x=>x.split(';')[0]);for(const pair of cookies){const name=pair.slice(0,pair.indexOf('='));const existing=jar.cookie.split('; ').filter(x=>x&&!x.startsWith(name+'='));jar.cookie=[...existing,pair].join('; ');if(name==='ml_csrf')jar.csrf=decodeURIComponent(pair.slice(name.length+1))}return response
    }
    const owner:Jar={cookie:'',csrf:''};let r=await call('/auth/csrf',owner);owner.csrf=(await r.json()).csrfToken;assert.equal(r.status,200)
    r=await call('/auth/login',owner,'POST',{email:'owner@example.test',password:'wrong'});assert.equal(r.status,401);assert.equal((await r.json()).error,'invalid_credentials')
-   r=await call('/auth/login',owner,'POST',{email:'owner@example.test',password:'StrongOwnerPassword-2026'});assert.equal(r.status,200);assert.ok(owner.cookie.includes('ml_session='));owner.csrf=(await r.json()).csrfToken
+   r=await call('/auth/login',owner,'POST',{email:'owner@example.test',password:'StrongOwnerPassword-2026'});assert.equal(r.status,200);assert.ok(owner.cookie.includes('ml_session='));owner.csrf=(await r.json()).csrfToken;for(const cookie of r.headers.getSetCookie()){assert.match(cookie,/HttpOnly/i);assert.match(cookie,/SameSite=Lax/i);assert.doesNotMatch(cookie,/; Secure/i)}
+   const allowedCors=await fetch(base+'/auth/session',{headers:{origin:'http://localhost:5173',cookie:owner.cookie}});assert.equal(allowedCors.headers.get('access-control-allow-origin'),'http://localhost:5173');assert.equal(allowedCors.headers.get('access-control-allow-credentials'),'true')
+   const deniedOrigin=await fetch(base+'/auth/login',{method:'POST',headers:{origin:'https://evil.example','content-type':'application/json'},body:JSON.stringify({email:'owner@example.test',password:'StrongOwnerPassword-2026'})});assert.equal(deniedOrigin.status,403);assert.equal(deniedOrigin.headers.get('access-control-allow-origin'),null)
+   const invalidCsrf=await fetch(base+'/auth/login',{method:'POST',headers:{origin:'http://localhost:5173',cookie:owner.cookie,'x-csrf-token':'invalid','content-type':'application/json'},body:JSON.stringify({email:'owner@example.test',password:'StrongOwnerPassword-2026'})});assert.equal(invalidCsrf.status,403);assert.equal((await invalidCsrf.json()).error,'csrf_invalid')
    const csrfMissing=await fetch(base+'/tools',{method:'POST',headers:{origin:'http://localhost:5173',cookie:owner.cookie,'content-type':'application/json'},body:'{}'});assert.equal(csrfMissing.status,403)
    r=await call('/users',owner,'POST',{name:'Tool User',email:'user@example.test',password:'StrongUserPassword-2026',role:'USER'});assert.equal(r.status,201);const userId=(await r.json()).user.id
    r=await call('/users?q=Tool',owner);assert.equal(r.status,200);assert.equal((await r.json()).users[0].id,userId)
@@ -74,13 +77,13 @@ else{
    r=await call('/tools',user);assert.equal((await r.json()).tools.length,1)
    r=await call(`/users/${userId}`,owner,'PATCH',{name:'Updated Tool User',role:'ADMIN'});assert.equal(r.status,200);assert.equal((await r.json()).user.role,'ADMIN')
    const oldOwnerCookie=owner.cookie
-   r=await call('/auth/rotate',owner,'POST',{});assert.equal(r.status,200);owner.csrf=(await r.json()).csrfToken
+   env.NODE_ENV='production';assert.equal(allowedWebOrigin(),'https://machadolabs.vercel.app');assert.equal(createApp().get('trust proxy'),1);r=await call('/auth/rotate',owner,'POST',{},'127.0.0.1','https://machadolabs.vercel.app');assert.equal(r.status,200);owner.csrf=(await r.json()).csrfToken;for(const cookie of r.headers.getSetCookie()){assert.match(cookie,/HttpOnly/i);assert.match(cookie,/SameSite=None/i);assert.match(cookie,/; Secure/i)};const productionCors=await fetch(base+'/auth/session',{headers:{origin:'https://machadolabs.vercel.app',cookie:owner.cookie}});assert.equal(productionCors.headers.get('access-control-allow-origin'),'https://machadolabs.vercel.app');assert.equal(productionCors.headers.get('access-control-allow-credentials'),'true');const wrongProductionCors=await fetch(base+'/auth/session',{headers:{origin:'https://evil.example',cookie:owner.cookie}});assert.equal(wrongProductionCors.headers.get('access-control-allow-origin'),null);env.NODE_ENV='test'
    const oldSession=await fetch(base+'/auth/session',{headers:{cookie:oldOwnerCookie}});assert.equal(oldSession.status,401)
    const session=await fetch(base+'/auth/session',{headers:{cookie:owner.cookie}});assert.equal(session.status,200)
    r=await call(`/users/${userId}/status`,owner,'PATCH',{status:'disabled'});const blockedUser=await r.json();assert.equal(r.status,200,JSON.stringify(blockedUser));assert.equal(blockedUser.user.status,'disabled')
    const disabled=await fetch(base+'/auth/session',{headers:{cookie:user.cookie}});assert.equal(disabled.status,401)
    r=await call(`/users/${userId}/status`,owner,'PATCH',{status:'active'});assert.equal(r.status,200);assert.equal((await r.json()).user.status,'active')
-   r=await call('/auth/logout',owner,'POST',{});assert.equal(r.status,204);r=await call('/auth/session',owner);assert.equal(r.status,401)
+   env.NODE_ENV='production';r=await call('/auth/logout',owner,'POST',{},'127.0.0.1','https://machadolabs.vercel.app');assert.equal(r.status,204);for(const cookie of r.headers.getSetCookie()){assert.match(cookie,/HttpOnly/i);assert.match(cookie,/SameSite=None/i);assert.match(cookie,/; Secure/i)};env.NODE_ENV='test';r=await call('/auth/session',owner);assert.equal(r.status,401)
    const expiredToken=user.cookie.split('; ').find(x=>x.startsWith('ml_session='))!.slice('ml_session='.length)
    const{createHash}=await import('node:crypto');await adminDb.query('UPDATE sessions SET expires_at=now()-interval \'1 minute\' WHERE token_hash=$1',[createHash('sha256').update(decodeURIComponent(expiredToken)).digest()]);r=await call('/auth/session',user);assert.equal(r.status,401)
    const throttle:Jar={cookie:'',csrf:''};r=await call('/auth/csrf',throttle);throttle.csrf=(await r.json()).csrfToken

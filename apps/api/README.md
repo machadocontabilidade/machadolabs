@@ -11,7 +11,9 @@ Node.js + TypeScript + Express 5. Módulos em `src/modules` isolam Auth, Users, 
 
 Não execute `init-owner` ainda. Aguarde a validação do ambiente antes de inicializar um OWNER. O comando exige que a tabela `users` esteja vazia; nome, e-mail e senha são informados no terminal. Não existe endpoint público de bootstrap nem senha padrão.
 
-O middleware limita tentativas de login com contador persistido em PostgreSQL e rejeita origens diferentes de `WEB_ORIGIN`. Cookies usam SameSite=Lax e HttpOnly; ambos são Secure em produção. O frontend obtém CSRF em `/api/auth/csrf`; toda mutação requer `X-CSRF-Token` igual ao cookie `ml_csrf`.
+O middleware limita tentativas de login com contador persistido em PostgreSQL. Em produção, CORS e a validação de origem aceitam somente `https://machadolabs.vercel.app`, com credenciais; em desenvolvimento, usam `WEB_ORIGIN`. Cookies `ml_session` e `ml_csrf` são HttpOnly. Em produção usam SameSite=None e Secure; localmente continuam SameSite=Lax e sem Secure. Toda mutação continua exigindo `X-CSRF-Token` igual ao cookie `ml_csrf`, além da validação do hash CSRF armazenado na sessão.
+
+O Render termina HTTPS no proxy reverso. A API confia em um salto de proxy apenas em produção (`trust proxy=1`), para que Express reconheça corretamente HTTPS e `req.ip`; em desenvolvimento essa confiança fica desativada. Cookies `SameSite=None; Secure` permitem o envio cross-site entre Vercel e Render, mas navegadores ou configurações que bloqueiam cookies de terceiros ainda podem impedir a sessão. Nesse caso, será necessário servir frontend e API sob o mesmo site (por exemplo, API em subdomínio/domínio próprio apropriado ou proxy/BFF same-site); o código CSRF e CORS não deve ser enfraquecido para contornar o bloqueio.
 
 ## Variáveis
 

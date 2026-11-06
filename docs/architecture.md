@@ -13,7 +13,7 @@ Migrations SQL versionadas criam users, sessions, tools, categories, permissions
 ## Segurança e operação
 
 - Senhas são armazenadas com Argon2id.
-- Cookies de sessão são HttpOnly, SameSite=Lax e Secure em produção.
+- Cookies de sessão e CSRF são HttpOnly; usam SameSite=None e Secure em produção para permitir credenciais cross-site entre Vercel e Render, e SameSite=Lax sem Secure em desenvolvimento. Bloqueios de cookies de terceiros no navegador ainda podem impedir a autenticação; nesse caso, frontend e API precisam compartilhar um site via domínio ou proxy/BFF.
 - Mutação exige origem configurada e token CSRF ligado à sessão.
 - OWNER, ADMIN e USER são autorizados no servidor. ADMIN gerencia usuários USER, ferramentas e categorias; OWNER também administra contas ADMIN e permissões por ferramenta. Acesso USER é filtrado por ferramenta no servidor.
 - O primeiro OWNER só pode ser criado pelo comando local quando não há usuários.
