@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: machado_local
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_only_change_me}
+      POSTGRES_DB: machado_labs_dev
+    volumes:
+      - machado_labs_pgdata:/var/lib/postgresql/data
+      - ./database/init/01-create-test-db.sql:/docker-entrypoint-initdb.d/01-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U machado_local -d machado_labs_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  machado_labs_pgdata:

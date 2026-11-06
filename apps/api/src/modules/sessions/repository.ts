@@ -1,0 +1,7 @@
+import{createHash}from'node:crypto';import{pool}from'../../db/pool.js'
+export async function insertSession(userId:string,tokenHash:Buffer,csrfHash:Buffer,expiresAt:Date){const q=await pool.query('INSERT INTO sessions(user_id,token_hash,csrf_hash,expires_at) VALUES($1,$2,$3,$4) RETURNING id',[userId,tokenHash,csrfHash,expiresAt]);return q.rows[0].id}
+export async function replaceSession(sessionId:string,userId:string,tokenHash:Buffer,csrfHash:Buffer,expiresAt:Date){const c=await pool.connect();try{await c.query('BEGIN');const d=await c.query('DELETE FROM sessions WHERE id=$1 AND user_id=$2 RETURNING id',[sessionId,userId]);if(!d.rowCount)throw new Error('session_missing');const q=await c.query('INSERT INTO sessions(user_id,token_hash,csrf_hash,expires_at) VALUES($1,$2,$3,$4) RETURNING id',[userId,tokenHash,csrfHash,expiresAt]);await c.query('COMMIT');return q.rows[0].id}catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}
+export async function updateCsrf(tokenHash:Buffer,sessionId:string){await pool.query('UPDATE sessions SET csrf_hash=$1 WHERE id=$2',[tokenHash,sessionId])}
+export async function sessionForToken(tokenHash:Buffer){const q=await pool.query('SELECT id,expires_at FROM sessions WHERE token_hash=$1 AND expires_at>now()',[tokenHash]);return q.rows[0]}
+export async function deleteSession(id:string){await pool.query('DELETE FROM sessions WHERE id=$1',[id])}
+export async function recordLogout(userId:string,ip:string){await pool.query("INSERT INTO security_events(user_id,event,ip) VALUES($1,'logout',$2)",[userId,ip||null])}

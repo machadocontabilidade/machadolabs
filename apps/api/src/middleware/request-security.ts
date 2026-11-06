@@ -1,0 +1,5 @@
+import {createHash,timingSafeEqual} from 'node:crypto'
+import type{Request,Response,NextFunction}from'express'
+import{env}from'../config/env.js';import{pool}from'../db/pool.js';import{HttpError}from'./errors.js'
+export function originGuard(req:Request,_res:Response,next:NextFunction){if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.get('origin')!==env.WEB_ORIGIN)return next(new HttpError(403,'origin_forbidden'));next()}
+export async function csrfGuard(req:Request,_res:Response,next:NextFunction){if(['GET','HEAD','OPTIONS'].includes(req.method))return next();const h=req.get('x-csrf-token'),c=req.cookies?.ml_csrf;if(!h||!c||h.length!==c.length||!timingSafeEqual(Buffer.from(h),Buffer.from(c)))return next(new HttpError(403,'csrf_invalid'));if(req.auth){const r=await pool.query('SELECT csrf_hash FROM sessions WHERE id=$1',[req.auth.sessionId]);if(!r.rows[0]||!timingSafeEqual(createHash('sha256').update(h).digest(),r.rows[0].csrf_hash))return next(new HttpError(403,'csrf_invalid'))}next()}

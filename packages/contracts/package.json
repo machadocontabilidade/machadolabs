@@ -1,0 +1,15 @@
+{
+  "name": "@machado-labs/contracts",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "5.7.3"
+  }
+}

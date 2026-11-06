@@ -1,0 +1,10 @@
+import type {Request,Response,NextFunction} from 'express'
+import {HttpError} from '../../middleware/errors.js'
+import * as service from './service.js'
+import {toolIdSchema,toolListSchema,toolSchema,permissionUpdateSchema} from './validation.js'
+export async function list(req:Request,res:Response,next:NextFunction){try{const q=toolListSchema.parse(req.query);const tools=await service.listAuthorized(req.auth!.userId,req.auth!.role,q);res.json({tools})}catch(e){next(e)}}
+export async function get(req:Request,res:Response,next:NextFunction){try{const id=toolIdSchema.parse(req.params.id);res.json({tool:await service.readAuthorized(req.auth!.userId,req.auth!.role,id)})}catch(e){next(e)}}
+export async function create(req:Request,res:Response,next:NextFunction){try{const body=toolSchema.parse(req.body);const tool=await service.create(body,req.auth!.userId);res.status(201).json({tool})}catch(e:any){if(e.code==='23505')return res.status(409).json({error:'route_unavailable'});if(e.code==='23503')return res.status(400).json({error:'invalid_category_or_responsible'});next(e)}}
+export async function update(req:Request,res:Response,next:NextFunction){try{const id=toolIdSchema.parse(req.params.id),body=toolSchema.partial().parse(req.body);if(!Object.keys(body).length)throw new HttpError(400,'empty_update');const tool=await service.update(id,body,req.auth!.userId);res.json({tool})}catch(e:any){if(e.code==='23505')return res.status(409).json({error:'route_unavailable'});if(e.code==='23503')return res.status(400).json({error:'invalid_category_or_responsible'});next(e)}}
+export async function readPermissions(req:Request,res:Response,next:NextFunction){try{const id=toolIdSchema.parse(req.params.id);res.json({userIds:await service.getUsers(id)})}catch(e){next(e)}}
+export async function writePermissions(req:Request,res:Response,next:NextFunction){try{const id=toolIdSchema.parse(req.params.id),body=permissionUpdateSchema.parse(req.body);await service.setUsers(id,body.userIds,req.auth!.userId);res.status(204).end()}catch(e){next(e)}}
