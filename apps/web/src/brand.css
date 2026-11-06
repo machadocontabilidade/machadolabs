@@ -8,6 +8,19 @@
   --ink: #30251b;
   --olive: #63745d;
   --focus: #cf9d22;
+  /* Shared, application-wide typography scale. */
+  --type-body: 16px;
+  --type-description: 15px;
+  --type-label: 14px;
+  --type-input: 15px;
+  --type-placeholder: 14px;
+  --type-button: 15px;
+  --type-navigation: 15px;
+  --type-helper: 13px;
+  --type-breadcrumb: 12.5px;
+  --type-page-title: 34px;
+  --type-section-title: 22px;
+  --type-card-title: 18px;
 }
 body { color: var(--ink); background: #faf8f4; }
 button:focus-visible, input:focus-visible { outline: 3px solid #d7a92880; outline-offset: 3px; }
@@ -62,4 +75,50 @@ button:focus-visible, input:focus-visible { outline: 3px solid #d7a92880; outlin
   .brand-logo { width: 38px; height: 38px; }
   .sidebar-brand { height: 58px; }
   .login-panel .brand-logo { width: 66px; height: 66px; }
+}
+
+/* One source of truth for readable type across every application screen. */
+body { font-size: var(--type-body); }
+.nav-item { font-size: var(--type-navigation); }
+.breadcrumbs { font-size: var(--type-breadcrumb); }
+.welcome-row h1, .page-heading h1, .detail-card h1, .login-panel h1 { font-size: var(--type-page-title); }
+.section-heading h2, .search-hero h2, .icon-picker-header h2 { font-size: var(--type-section-title); }
+.tool-card h3, .empty-state h3, .admin-activity strong, .admin-tool-row strong, .admin-create h2 { font-size: var(--type-card-title); }
+.welcome-row p, .page-heading p, .search-hero p, .detail-description, .tool-card p, .login-panel>p { font-size: var(--type-description); }
+.tool-card p, .detail-description, .page-heading p, .login-panel>p { line-height: 1.55; }
+.tool-form label, .status-edit, .login-panel label, .admin-create label, .admin-user-row label, .icon-picker-label { font-size: var(--type-label); }
+.search-box input, .catalog-search input, .tool-form input, .tool-form textarea, .status-edit select, .login-panel input,
+.admin-search input, .admin-create input, .admin-create select, .admin-create textarea, .admin-user-row input,
+.admin-user-row select, .admin-category-row input, .icon-picker-search input { font-size: var(--type-input); }
+.search-box input::placeholder, .catalog-search input::placeholder, .login-panel input::placeholder,
+.tool-form input::placeholder, .tool-form textarea::placeholder, .admin-search input::placeholder { font-size: var(--type-placeholder); }
+.button, .text-link, .back-link, .filter-chip, .admin-tab { font-size: var(--type-button); }
+.category-shortcuts button, .user-pill { font-size: var(--type-button); }
+.nav-label, .nav-count, .eyebrow, .stat-label, .search-kicker, .tool-category, .availability, .detail-meta span,
+.admin-metric span, .profile strong, .profile small, .top-demo, .stat-note, .tool-card-bottom, .footer,
+.demo-tag, .permission-box, .empty-note, .empty-state p, .detail-meta strong, .login-panel>small, .login-aside>span, .admin-activity span, .admin-activity small,
+.admin-tool-row small, .result-count, .icon-picker-id, .icon-picker-preview strong, .icon-picker-preview small,
+.icon-picker-footer, .icon-choice span, .icon-picker-search kbd, .form-error, .inline-notice,
+.admin-success, .user-status { font-size: var(--type-helper); }
+.admin-subtitle { font-size: var(--type-section-title); }
+.permission-box>strong { font-size: var(--type-card-title); }
+.permission-list label { font-size: var(--type-label); }
+.admin-tabs .admin-tab { font-size: var(--type-button); }
+.footer span:last-child, .search-box kbd { font-size: var(--type-helper); }
+.dashboard-search-result strong { font-size: var(--type-label); }
+.dashboard-search-result small { font-size: var(--type-helper); }
+.dashboard-search-empty, .icon-picker-empty, .icon-picker-header p { font-size: var(--type-helper); }
+.icon-picker-dialog { font-size: var(--type-body); }
+.tool-form input, .tool-form textarea, .status-edit select, .login-panel input, .admin-search input,
+.admin-create input, .admin-create select, .admin-create textarea, .admin-user-row input, .admin-user-row select,
+.admin-category-row input { min-height: 44px; }
+.tool-form textarea, .admin-create textarea { min-height: 82px; }
+.search-box, .catalog-search { min-height: 44px; }
+.button { min-height: 44px; }
+
+@media (max-width: 760px) {
+  .welcome-row h1, .page-heading h1, .detail-card h1, .login-panel h1 { font-size: 30px; }
+  .section-heading h2, .search-hero h2, .icon-picker-header h2, .admin-subtitle { font-size: 21px; }
+  .tool-card h3, .empty-state h3, .admin-activity strong, .admin-tool-row strong, .admin-create h2 { font-size: 17px; }
+  .breadcrumbs { font-size: 12px; }
 }

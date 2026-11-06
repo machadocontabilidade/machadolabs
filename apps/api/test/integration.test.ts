@@ -48,7 +48,8 @@ else{
    r=await call('/users',owner,'POST',{name:'Admin User',email:'admin@example.test',password:'StrongAdminPassword-2026',role:'ADMIN'});assert.equal(r.status,201)
    r=await call('/categories',owner,'POST',{name:'Tests'});assert.equal(r.status,201)
    r=await call('/categories',owner,'POST',{name:'Unused'});assert.equal(r.status,201)
-   r=await call('/tools',owner,'POST',{name:'Internal Test Tool',description:'A persistent test tool',icon:'▤',category:'Tests',route:'/test-tool',status:'available'});assert.equal(r.status,201);const tool=(await r.json()).tool
+   r=await call('/tools',owner,'POST',{name:'Internal Test Tool',description:'A persistent test tool',icon:'file-spreadsheet',category:'Tests',route:'/test-tool',status:'available'});assert.equal(r.status,201);const tool=(await r.json()).tool
+   r=await call('/tools',owner,'POST',{name:'Invalid Icon Tool',description:'',icon:'📊',category:'Tests',route:'/invalid-icon',status:'available'});assert.equal(r.status,400)
    r=await call(`/tools/${tool.id}`,owner,'PUT',{...tool,name:'Updated Test Tool',status:'maintenance'});assert.equal(r.status,200);assert.equal((await r.json()).tool.name,'Updated Test Tool')
    const admin:Jar={cookie:'',csrf:''};r=await call('/auth/csrf',admin);admin.csrf=(await r.json()).csrfToken;r=await call('/auth/login',admin,'POST',{email:'admin@example.test',password:'StrongAdminPassword-2026'});assert.equal(r.status,200);const adminLogin=await r.json();assert.equal(adminLogin.user.role,'ADMIN');admin.csrf=adminLogin.csrfToken
    r=await call('/tools',admin);assert.equal(r.status,200);assert.equal((await r.json()).tools.length,1)
@@ -56,7 +57,7 @@ else{
    r=await call(`/users/${userId}`,admin,'PATCH',{name:'Changed by admin',role:'ADMIN'});assert.equal(r.status,403)
    r=await call(`/tools/${tool.id}/permissions`,admin);assert.equal(r.status,403)
    r=await call('/dashboard/admin',admin);assert.equal(r.status,200);const dashboard=await r.json();assert.equal(dashboard.tools.total,1);assert.deepEqual({available:dashboard.tools.available,development:dashboard.tools.development,maintenance:dashboard.tools.maintenance,unavailable:dashboard.tools.unavailable},{available:0,development:0,maintenance:1,unavailable:0})
-   r=await call('/tools',admin,'POST',{name:'Admin Test Tool',description:'Managed by ADMIN',icon:'▤',category:'Tests',route:'/admin-test-tool',status:'available'});assert.equal(r.status,201);const adminTool=(await r.json()).tool
+   r=await call('/tools',admin,'POST',{name:'Admin Test Tool',description:'Managed by ADMIN',icon:'calculator',category:'Tests',route:'/admin-test-tool',status:'available'});assert.equal(r.status,201);const adminTool=(await r.json()).tool
    r=await call(`/tools/${adminTool.id}`,admin,'PUT',{...adminTool,name:'Admin Updated Tool'});assert.equal(r.status,200);assert.equal((await r.json()).tool.name,'Admin Updated Tool')
    r=await call('/dashboard/admin',admin);const updatedDashboard=await r.json();assert.equal(updatedDashboard.tools.total,2);assert.deepEqual({available:updatedDashboard.tools.available,development:updatedDashboard.tools.development,maintenance:updatedDashboard.tools.maintenance,unavailable:updatedDashboard.tools.unavailable},{available:1,development:0,maintenance:1,unavailable:0});assert.ok(updatedDashboard.activity.some((item:any)=>item.action==='tool_updated'&&item.actor==='Admin User'&&item.at&&item.resource==='tool'&&item.resource_id===adminTool.id))
    const user:Jar={cookie:'',csrf:''};r=await call('/auth/csrf',user);user.csrf=(await r.json()).csrfToken;r=await call('/auth/login',user,'POST',{email:'user@example.test',password:'StrongUserPassword-2026'});assert.equal(r.status,200);user.csrf=(await r.json()).csrfToken
