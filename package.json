@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @machado-labs/web",
     "dev:api": "npm run dev --workspace @machado-labs/api",
-    "test": "npm run test --workspace @machado-labs/api",
+    "test": "npm run test --workspace @machado-labs/web && npm run test --workspace @machado-labs/api",
     "build": "npm run build --workspace @machado-labs/api && npm run build --workspace @machado-labs/web",
     "typecheck": "npm run typecheck --workspace @machado-labs/api && npm run typecheck --workspace @machado-labs/web && npm run typecheck --workspace @machado-labs/contracts"
   }
