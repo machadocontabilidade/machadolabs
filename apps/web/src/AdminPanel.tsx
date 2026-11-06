@@ -6,7 +6,7 @@ type ToolStatus = 'available' | 'development' | 'maintenance' | 'unavailable'
 type AdminUser = { id: string; name: string; email: string; role: Role; status: 'active' | 'disabled' }
 type Tool = { id: string; name: string; description: string; icon: string; category: string; route: string; status: ToolStatus; responsible_id: string | null }
 type Category = { name: string }
-type Dashboard = { users: { total: number; active: number }; tools: { total: number; available: number; development: number }; activity: { id: number; action: string; at: string; resource: string | null; resource_id: string | null; actor: string | null }[] }
+type Dashboard = { users: { total: number; active: number }; tools: { total: number; available: number; development: number; maintenance: number; unavailable: number }; activity: { id: number; action: string; at: string; resource: string | null; resource_id: string | null; actor: string | null }[] }
 const API = import.meta.env.VITE_API_URL || '/api'
 async function request<T>(path: string, csrf: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers)
@@ -67,7 +67,7 @@ export function AdminPanel({ csrf, role }: { csrf: string; role: Role }) {
     {error && <p className="form-error" role="alert">{error}</p>}{notice && <p className="admin-success" role="status">{notice}</p>}
     {searchBusy && <p className="empty-note" role="status">Carregando dados administrativos…</p>}
     {section === 'Dashboard' && dashboard && <>
-      <div className="admin-metrics"><Metric label="TOTAL DE USUÁRIOS" value={dashboard.users.total}/><Metric label="USUÁRIOS ATIVOS" value={dashboard.users.active}/><Metric label="TOTAL DE FERRAMENTAS" value={dashboard.tools.total}/><Metric label="DISPONÍVEIS" value={dashboard.tools.available}/><Metric label="EM DESENVOLVIMENTO" value={dashboard.tools.development}/></div>
+      <div className="admin-metrics"><Metric label="TOTAL DE USUÁRIOS" value={dashboard.users.total}/><Metric label="USUÁRIOS ATIVOS" value={dashboard.users.active}/><Metric label="TOTAL DE FERRAMENTAS" value={dashboard.tools.total}/><Metric label="DISPONÍVEIS" value={dashboard.tools.available}/><Metric label="EM DESENVOLVIMENTO" value={dashboard.tools.development}/><Metric label="EM MANUTENÇÃO" value={dashboard.tools.maintenance}/><Metric label="INDISPONÍVEIS" value={dashboard.tools.unavailable}/></div>
       <h2 className="admin-subtitle">Últimas atividades administrativas</h2>
       <div className="admin-list">{dashboard.activity.map(item => <div className="admin-activity" key={item.id}><strong>{labels[item.action] || item.action}</strong><span>{item.resource || 'plataforma'}{item.resource_id ? ` · ${item.resource_id}` : ''}</span><small>{item.actor || 'Conta removida'} · {new Date(item.at).toLocaleString('pt-BR')}</small></div>)}{!dashboard.activity.length && <p className="empty-note">Nenhuma atividade administrativa registrada.</p>}</div>
     </>}
