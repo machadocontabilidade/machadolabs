@@ -6,18 +6,24 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty"
+    "typecheck": "tsc -b --pretty",
+    "test": "vitest run"
   },
   "dependencies": {
     "@machado-labs/contracts": "0.1.0",
+    "lucide-react": "^1.70.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
     "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "^31.0.0",
     "typescript": "5.7.3",
-    "vite": "6.4.5"
+    "vite": "6.4.5",
+    "vitest": "^5.1.0"
   }
 }
